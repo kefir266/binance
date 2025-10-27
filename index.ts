@@ -12,7 +12,7 @@ app.get("/data", async (req, res) => {
   if (!pair) {
     throw new Error("Bad request");
   }
-  console.log(pair);
+
   const data = await binanceService.get(pair);
 
   res.json(data);
