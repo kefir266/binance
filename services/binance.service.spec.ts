@@ -1,23 +1,33 @@
-const { expect, jest, test } = require("@jest/globals");
+import { expect, jest, test, beforeEach } from "@jest/globals";
 
-const exchangeInfo = jest.fn();
-const mockedSpot = jest.fn(() => {
-  restAPI: {
-    exchangeInfo;
-  }
+const exchangeInfo = jest.fn<any>().mockResolvedValue({
+  data: jest.fn().mockReturnValue({ symbols: [] }),
 });
 
-jest.mock("./binance.service", () => ({
-  "@binance/spot": {
-    Spot: mockedSpot,
-  },
+jest.unstable_mockModule("@binance/spot", () => ({
+  Spot: jest.fn<any>().mockImplementation(() => ({
+    restAPI: {
+      exchangeInfo,
+    },
+    websocketStreams: {
+      connect: jest.fn(),
+    },
+  })),
+  SPOT_WS_STREAMS_PROD_URL: "wss://stream.binance.com:9443",
+  SpotRestAPI: {},
+  SpotWebsocketStreams: {},
 }));
 
-test("Should create connection", () => {
+const { default: binanceService } = await import("./binance.service");
+
+beforeEach(() => {
+  exchangeInfo.mockClear();
+});
+
+test("Should create connection", async () => {
   const pair = "test pair";
 
-  const binance = require("./binance.service");
-  binance.get(pair);
+  await binanceService.get(pair);
 
   expect(exchangeInfo).toHaveBeenCalledWith({ symbol: pair });
 });
